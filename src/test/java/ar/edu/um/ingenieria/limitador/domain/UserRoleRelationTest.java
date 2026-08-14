@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 
+import ar.edu.um.ingenieria.limitador.repository.RoleRepository;
+import ar.edu.um.ingenieria.limitador.repository.UserRepository;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
