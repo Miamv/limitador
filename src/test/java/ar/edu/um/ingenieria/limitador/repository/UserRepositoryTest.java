@@ -1,10 +1,10 @@
-package ar.edu.um.ingenieria.limitador.domain;
+package ar.edu.um.ingenieria.limitador.repository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 
-import ar.edu.um.ingenieria.limitador.repository.UserRepository;
+import ar.edu.um.ingenieria.limitador.domain.User;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

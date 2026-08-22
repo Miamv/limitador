@@ -9,11 +9,13 @@ import jakarta.persistence.ManyToMany;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 public class Role {
 
 	@Id
@@ -26,8 +28,6 @@ public class Role {
 	@ManyToMany(mappedBy = "roles")
 	private Set<User> users = new HashSet<>();
 
-	protected Role() {
-	}
 
 	public Role(String description) {
 		this.description = description;
