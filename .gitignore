@@ -33,3 +33,6 @@ build/
 .vscode/
 *.workspace
 boot.ps1
+
+### CSV ###
+*.csv
