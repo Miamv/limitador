@@ -1,0 +1,360 @@
+{
+	"info": {
+		"name": "Limitador API - CRUD",
+		"description": "Colección CRUD completa para los 3 controllers del proyecto Limitador.\n\nBase URL por defecto: http://localhost:8080 (editar variable `baseUrl` si usas otro puerto/perfil).\n\nControllers mapeados:\n- Role -> /api/roles\n- User -> /api/users\n- UserData -> /api/users-data\n\nNotas de dominio:\n- Role { id: Long (auto), description: String unique, users: Set<User> @JsonIgnore vía mappedBy } → solo enviar `description`.\n- User { id, username (unique), email, active, roles @JsonIgnore, userData: UserData (FK user_data_id) } → `roles` no se serializa; `userData` opcional como { \"id\": 1 } o null.\n- UserData { id, firstName, lastName, address, phoneNumber, user @JsonIgnore (mappedBy) } → no enviar `user`.\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Roles - /api/roles",
+			"description": "CRUD RoleController.java:20 (`@RequestMapping(\"/api/roles\")`)\nDominio: Role.java:19 - campos: id (Long, IDENTITY), description (String unique notNull), users (ManyToMany mappedBy, @JsonIgnore indirecto por User.roles).",
+			"item": [
+				{
+					"name": "GET All Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "roles"]
+						},
+						"description": "RoleController.java:29 `findAll()` -> 200 List<Role>"
+					}
+				},
+				{
+					"name": "GET Role by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/roles/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "roles", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID del Role"
+								}
+							]
+						},
+						"description": "RoleController.java:34 `findById(id)` -> 200 Role | 404 Not Found"
+					}
+				},
+				{
+					"name": "POST Create Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"ROLE_ADMIN\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "roles"]
+						},
+						"description": "RoleController.java:41 `save(@RequestBody Role)` -> 201 Created\nBody solo requiere `description` (unique, not null). `id` lo genera IDENTITY. `users` no se envía."
+					}
+				},
+				{
+					"name": "PUT Update Role",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"ROLE_ADMIN_UPDATED\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/roles/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "roles", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "RoleController.java:47 `update(id, @RequestBody Role)` -> 200 Role. Enviar `description` actualizado."
+					}
+				},
+				{
+					"name": "DELETE Role",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/roles/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "roles", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "RoleController.java:53 `deleteById(id)` -> 204 No Content"
+					}
+				}
+			]
+		},
+		{
+			"name": "Users - /api/users",
+			"description": "CRUD UserController.java:20 (`@RequestMapping(\"/api/users\")`)\nDominio: User.java:22 - campos: id, username (unique notNull), email (notNull), active (Boolean), roles (ManyToMany @JsonIgnore), userData (OneToOne JoinColumn user_data_id).",
+			"item": [
+				{
+					"name": "GET All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"]
+						},
+						"description": "UserController.java:29 `findAll()` -> 200 List<User>. `roles` viene ignorado por @JsonIgnore; `userData` viene anidado si existe."
+					}
+				},
+				{
+					"name": "GET User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "UserController.java:34 `findById(id)` -> 200 User | 404"
+					}
+				},
+				{
+					"name": "POST Create User - simple",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"jdoe\",\n  \"email\": \"jdoe@example.com\",\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"]
+						},
+						"description": "UserController.java:41 `save(@RequestBody User)` -> 201 Created\nVariante mínima sin userData/roles. `username` unique requerido, `email` requerido."
+					}
+				},
+				{
+					"name": "POST Create User - con UserData",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"asmith\",\n  \"email\": \"asmith@example.com\",\n  \"active\": true,\n  \"userData\": {\n    \"id\": 1\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"]
+						},
+						"description": "Variante con relación OneToOne. Primero crear UserData (POST /api/users-data) y luego referenciarlo por id. `roles` se ignora (@JsonIgnore) - asignar roles requiere endpoint dedicado (no expuesto en este CRUD)."
+					}
+				},
+				{
+					"name": "PUT Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"jdoe_updated\",\n  \"email\": \"jdoe.updated@example.com\",\n  \"active\": false,\n  \"userData\": {\n    \"id\": 1\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "UserController.java:47 `update(id, @RequestBody User)` -> 200 User"
+					}
+				},
+				{
+					"name": "DELETE User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "UserController.java:53 `deleteById(id)` -> 204 No Content"
+					}
+				}
+			]
+		},
+		{
+			"name": "UserData - /api/users-data",
+			"description": "CRUD UserDataController.java:20 (`@RequestMapping(\"/api/users-data\")`)\nDominio: UserData.java:16 - campos: id (IDENTITY), firstName (notNull, column first_name), lastName, address, phoneNumber (notNull, column phone_number), user (OneToOne mappedBy @JsonIgnore).",
+			"item": [
+				{
+					"name": "GET All UserData",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users-data",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users-data"]
+						},
+						"description": "UserDataController.java:29 `findAll()` -> 200 List<UserData>"
+					}
+				},
+				{
+					"name": "GET UserData by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users-data/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users-data", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "UserDataController.java:34 `findById(id)` -> 200 UserData | 404"
+					}
+				},
+				{
+					"name": "POST Create UserData",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"address\": \"Av. Siempre Viva 123, Mendoza\",\n  \"phoneNumber\": \"+5492615551234\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users-data",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users-data"]
+						},
+						"description": "UserDataController.java:41 `save(@RequestBody UserData)` -> 201 Created\nRequeridos: firstName (notNull), phoneNumber (notNull). Opcionales: lastName, address. No enviar `user` (@JsonIgnore) ni `id`."
+					}
+				},
+				{
+					"name": "PUT Update UserData",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Johnny\",\n  \"lastName\": \"Doe\",\n  \"address\": \"Av. Libertador 500, Mendoza\",\n  \"phoneNumber\": \"+5492615559999\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users-data/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users-data", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "UserDataController.java:47 `update(id, @RequestBody UserData)` -> 200 UserData"
+					}
+				},
+				{
+					"name": "DELETE UserData",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users-data/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users-data", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "UserDataController.java:53 `deleteById(id)` -> 204 No Content"
+					}
+				}
+			]
+		}
+	]
+}
