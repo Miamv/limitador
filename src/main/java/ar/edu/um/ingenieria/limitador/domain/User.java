@@ -12,6 +12,9 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 
 @Entity
@@ -30,7 +33,8 @@ public class User {
 	private String email;
 
 	private Boolean active;
-
+	
+@JsonIgnore
 	@ManyToMany
 	@JoinTable(name = "user_roles",
 			joinColumns = @JoinColumn(name = "user_id"),

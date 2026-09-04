@@ -1,5 +1,7 @@
 package ar.edu.um.ingenieria.limitador.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,7 +34,7 @@ public class UserData {
 
     @Column(nullable = false, name = "phone_number")
     private String phoneNumber;
-
+@JsonIgnore
     @OneToOne(mappedBy = "userData")
     private User user;
 }
