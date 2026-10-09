@@ -1,0 +1,20 @@
+$kind: http-request
+description: UserController.java:47 `update(id, @RequestBody User)` -> 200 User
+url: "{{baseUrl}}/api/users/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: "1"
+body:
+  type: text
+  content: |-
+    {
+      "username": "jdoe_updated",
+      "email": "jdoe.updated@example.com",
+      "active": false,
+      "userData": {
+        "id": 1
+      }
+    }
+order: 5000

@@ -1,0 +1,18 @@
+$kind: http-request
+description: UserDataController.java:47 `update(id, @RequestBody UserData)` -> 200 UserData
+url: "{{baseUrl}}/api/users-data/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: "1"
+body:
+  type: text
+  content: |-
+    {
+      "firstName": "Johnny",
+      "lastName": "Doe",
+      "address": "Av. Libertador 500, Mendoza",
+      "phoneNumber": "+5492615559999"
+    }
+order: 4000

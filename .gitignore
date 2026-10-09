@@ -36,3 +36,6 @@ boot.ps1
 
 ### CSV ###
 *.csv
+
+### application.properties ###
+application.properties

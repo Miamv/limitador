@@ -1,0 +1,18 @@
+$kind: http-request
+description: |-
+  UserDataController.java:41 `save(@RequestBody UserData)` -> 201 Created
+  Requeridos: firstName (notNull), phoneNumber (notNull). Opcionales: lastName, address. No enviar `user` (@JsonIgnore) ni `id`.
+url: "{{baseUrl}}/api/users-data"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "address": "Av. Siempre Viva 123, Mendoza",
+      "phoneNumber": "+5492615551234"
+    }
+order: 3000

@@ -1,0 +1,15 @@
+$kind: http-request
+description: |-
+  RoleController.java:41 `save(@RequestBody Role)` -> 201 Created
+  Body solo requiere `description` (unique, not null). `id` lo genera IDENTITY. `users` no se envía.
+url: "{{baseUrl}}/api/roles"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "description": "ROLE_ADMIN"
+    }
+order: 3000

@@ -1,0 +1,9 @@
+$kind: http-request
+description: RoleController.java:34 `findById(id)` -> 200 Role | 404 Not Found
+url: "{{baseUrl}}/api/roles/:id"
+method: GET
+pathVariables:
+  - key: id
+    value: "1"
+    description: ID del Role
+order: 2000

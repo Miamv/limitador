@@ -1,0 +1,7 @@
+$kind: http-request
+description: UserController.java:34 `findById(id)` -> 200 User | 404
+url: "{{baseUrl}}/api/users/:id"
+method: GET
+pathVariables:
+  id: "1"
+order: 2000

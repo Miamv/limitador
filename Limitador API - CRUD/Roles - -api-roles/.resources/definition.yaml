@@ -1,0 +1,6 @@
+$kind: collection
+name: Roles - /api/roles
+description: |-
+  CRUD RoleController.java:20 (`@RequestMapping("/api/roles")`)
+  Dominio: Role.java:19 - campos: id (Long, IDENTITY), description (String unique notNull), users (ManyToMany mappedBy, @JsonIgnore indirecto por User.roles).
+order: 1000

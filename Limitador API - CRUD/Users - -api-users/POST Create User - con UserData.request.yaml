@@ -1,0 +1,18 @@
+$kind: http-request
+description: Variante con relación OneToOne. Primero crear UserData (POST /api/users-data) y luego referenciarlo por id. `roles` se ignora (@JsonIgnore) - asignar roles requiere endpoint dedicado (no expuesto en este CRUD).
+url: "{{baseUrl}}/api/users"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "username": "asmith",
+      "email": "asmith@example.com",
+      "active": true,
+      "userData": {
+        "id": 1
+      }
+    }
+order: 4000
