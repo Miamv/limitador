@@ -14,8 +14,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Data;
+import lombok.ToString;
 
 @Entity
 @Data
@@ -31,6 +33,14 @@ public class User {
 
 	@Column(nullable = false)
 	private String email;
+
+	// Nullable para no romper filas existentes (ddl-auto=update agrega la columna
+	// sin asignar contraseñas conocidas). WRITE_ONLY: se recibe en POST/PUT pero
+	// nunca se serializa en respuestas. Excluido del toString para no filtrarlo en logs.
+	@ToString.Exclude
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+	@Column
+	private String password;
 
 	private Boolean active;
 	

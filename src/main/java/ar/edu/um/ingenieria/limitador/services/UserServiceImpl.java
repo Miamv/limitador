@@ -11,17 +11,25 @@ import ar.edu.um.ingenieria.limitador.repository.UserDataRepository;
 import ar.edu.um.ingenieria.limitador.repository.UserRepository;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.regex.Pattern;
 
 @Service
 public class UserServiceImpl implements UserService {
 
+    private static final Pattern BCRYPT_PATTERN = Pattern.compile("^\\$2[aby]\\$\\d{2}\\$.{53}$");
+
     private final UserRepository userRepository;
     private final UserDataRepository userDataRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, UserDataRepository userDataRepository) {
+    public UserServiceImpl(UserRepository userRepository, UserDataRepository userDataRepository,
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.userDataRepository = userDataRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -36,18 +44,32 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User save(User user) {
+        user.setPassword(encodeIfNecessary(user.getPassword()));
         resolveUserData(user);
         return userRepository.saveAndFlush(user);
     }
 
     @Override
     public User update(Long id, User user) {
-        if (!userRepository.findById(id).isPresent()) {
-            throw new RuntimeException("User not found with id: " + id);
-        }
+        User existing = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        user.setPassword(user.getPassword() == null
+                ? existing.getPassword()
+                : encodeIfNecessary(user.getPassword()));
         resolveUserData(user);
         user.setId(id);
         return userRepository.saveAndFlush(user);
+    }
+
+    private String encodeIfNecessary(String password) {
+        if (password == null || isAlreadyEncoded(password)) {
+            return password;
+        }
+        return passwordEncoder.encode(password);
+    }
+
+    private static boolean isAlreadyEncoded(String password) {
+        return BCRYPT_PATTERN.matcher(password).matches();
     }
 
     private void resolveUserData(User user) {
