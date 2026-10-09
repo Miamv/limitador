@@ -1,0 +1,17 @@
+$kind: collection
+description: |
+  Colección CRUD completa para los 3 controllers del proyecto Limitador.
+
+  Base URL por defecto: http://localhost:8080 (editar variable `baseUrl` si usas otro puerto/perfil).
+
+  Controllers mapeados:
+  - Role -> /api/roles
+  - User -> /api/users
+  - UserData -> /api/users-data
+
+  Notas de dominio:
+  - Role { id: Long (auto), description: String unique, users: Set<User> @JsonIgnore vía mappedBy } → solo enviar `description`.
+  - User { id, username (unique), email, active, roles @JsonIgnore, userData: UserData (FK user_data_id) } → `roles` no se serializa; `userData` opcional como { "id": 1 } o null.
+  - UserData { id, firstName, lastName, address, phoneNumber, user @JsonIgnore (mappedBy) } → no enviar `user`.
+variables:
+  baseUrl: http://localhost:8080

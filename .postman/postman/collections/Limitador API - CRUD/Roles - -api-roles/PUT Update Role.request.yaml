@@ -1,0 +1,15 @@
+$kind: http-request
+description: RoleController.java:47 `update(id, @RequestBody Role)` -> 200 Role. Enviar `description` actualizado.
+url: "{{baseUrl}}/api/roles/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: "1"
+body:
+  type: text
+  content: |-
+    {
+      "description": "ROLE_ADMIN_UPDATED"
+    }
+order: 4000
