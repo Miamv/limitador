@@ -17,14 +17,17 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import ar.edu.um.ingenieria.limitador.domain.UserData;
+import ar.edu.um.ingenieria.limitador.mapper.UserDataMapperImpl;
 import ar.edu.um.ingenieria.limitador.services.UserDataService;
 
 @WebMvcTest(UserDataController.class)
+@Import(UserDataMapperImpl.class)
 class UserDataControllerTest {
 
     @Autowired

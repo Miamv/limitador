@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.edu.um.ingenieria.limitador.domain.Role;
+import ar.edu.um.ingenieria.limitador.dto.RoleDto;
+import ar.edu.um.ingenieria.limitador.mapper.RoleMapper;
 import ar.edu.um.ingenieria.limitador.services.RoleService;
 
 @RestController
@@ -21,33 +22,35 @@ import ar.edu.um.ingenieria.limitador.services.RoleService;
 public class RoleController {
 
     private final RoleService roleService;
+    private final RoleMapper roleMapper;
 
-    public RoleController(RoleService roleService) {
+    public RoleController(RoleService roleService, RoleMapper roleMapper) {
         this.roleService = roleService;
+        this.roleMapper = roleMapper;
     }
 
     @GetMapping
-    public ResponseEntity<List<Role>> findAll() {
-        return ResponseEntity.ok(roleService.findAll());
+    public ResponseEntity<List<RoleDto>> findAll() {
+        return ResponseEntity.ok(roleMapper.toDtoList(roleService.findAll()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Role> findById(@PathVariable Long id) {
+    public ResponseEntity<RoleDto> findById(@PathVariable Long id) {
         return roleService.findById(id)
+            .map(roleMapper::toDto)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Role> save(@RequestBody Role role) {
-        Role saved = roleService.save(role);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    public ResponseEntity<RoleDto> save(@RequestBody RoleDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(roleMapper.toDto(roleService.save(roleMapper.toEntity(dto))));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Role> update(@PathVariable Long id, @RequestBody Role role) {
-        Role updated = roleService.update(id, role);
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<RoleDto> update(@PathVariable Long id, @RequestBody RoleDto dto) {
+        return ResponseEntity.ok(roleMapper.toDto(roleService.update(id, roleMapper.toEntity(dto))));
     }
 
     @DeleteMapping("/{id}")
