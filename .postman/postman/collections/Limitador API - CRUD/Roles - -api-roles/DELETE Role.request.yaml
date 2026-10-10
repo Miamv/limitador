@@ -1,0 +1,7 @@
+$kind: http-request
+description: RoleController.java:53 `deleteById(id)` -> 204 No Content
+url: "{{baseUrl}}/api/roles/:id"
+method: DELETE
+pathVariables:
+  id: "1"
+order: 5000

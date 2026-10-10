@@ -10,6 +10,9 @@ import ar.edu.um.ingenieria.limitador.domain.UserData;
 import ar.edu.um.ingenieria.limitador.repository.UserDataRepository;
 import ar.edu.um.ingenieria.limitador.repository.UserRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,6 +38,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> findAll() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public Page<User> findPaged(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     @Override

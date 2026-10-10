@@ -4,4 +4,4 @@ workspace:
 
 localResources:
   collections:
-    - ../Limitador API - CRUD
+    - ../limitador.postman_collection.json

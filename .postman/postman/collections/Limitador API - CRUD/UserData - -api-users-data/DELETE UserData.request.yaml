@@ -1,0 +1,7 @@
+$kind: http-request
+description: UserDataController.java:53 `deleteById(id)` -> 204 No Content
+url: "{{baseUrl}}/api/users-data/:id"
+method: DELETE
+pathVariables:
+  id: "1"
+order: 5000

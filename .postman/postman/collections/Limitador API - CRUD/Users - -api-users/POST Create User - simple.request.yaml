@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  UserController.java:41 `save(@RequestBody User)` -> 201 Created
+  Variante mínima sin userData/roles. `username` unique requerido, `email` requerido.
+url: "{{baseUrl}}/api/users"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "username": "jdoe",
+      "email": "jdoe@example.com",
+      "active": true
+    }
+order: 3000

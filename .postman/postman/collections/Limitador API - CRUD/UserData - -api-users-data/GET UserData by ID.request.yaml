@@ -1,0 +1,7 @@
+$kind: http-request
+description: UserDataController.java:34 `findById(id)` -> 200 UserData | 404
+url: "{{baseUrl}}/api/users-data/:id"
+method: GET
+pathVariables:
+  id: "1"
+order: 2000

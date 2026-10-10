@@ -1,0 +1,5 @@
+$kind: http-request
+description: UserController.java:29 `findAll()` -> 200 List<User>. `roles` viene ignorado por @JsonIgnore; `userData` viene anidado si existe.
+url: "{{baseUrl}}/api/users"
+method: GET
+order: 1000

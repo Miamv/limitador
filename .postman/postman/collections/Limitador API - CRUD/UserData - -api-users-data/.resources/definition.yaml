@@ -1,0 +1,6 @@
+$kind: collection
+name: UserData - /api/users-data
+description: |-
+  CRUD UserDataController.java:20 (`@RequestMapping("/api/users-data")`)
+  Dominio: UserData.java:16 - campos: id (IDENTITY), firstName (notNull, column first_name), lastName, address, phoneNumber (notNull, column phone_number), user (OneToOne mappedBy @JsonIgnore).
+order: 3000

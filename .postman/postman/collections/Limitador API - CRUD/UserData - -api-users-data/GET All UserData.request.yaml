@@ -1,0 +1,5 @@
+$kind: http-request
+description: UserDataController.java:29 `findAll()` -> 200 List<UserData>
+url: "{{baseUrl}}/api/users-data"
+method: GET
+order: 1000
