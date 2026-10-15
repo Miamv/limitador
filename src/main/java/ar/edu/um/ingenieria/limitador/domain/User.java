@@ -55,4 +55,25 @@ public class User {
 	@JoinColumn(name = "user_data_id")
 	private UserData userData;
 
+	/**
+	 * Proyecta este usuario a una vista inmutable ({@link UserDetail}).
+	 *
+	 * @throws IllegalStateException si username o email están vacíos (estado inconsistente)
+	 */
+	public UserDetail toDetail() {
+		requireNotBlank(username, "username");
+		requireNotBlank(email, "email");
+		Set<String> roleNames = new HashSet<>();
+		for (Role role : roles) {
+			roleNames.add(role.getDescription());
+		}
+		return new UserDetail(id, username, email, Boolean.TRUE.equals(active), roleNames);
+	}
+
+	private static void requireNotBlank(String value, String field) {
+		if (value == null || value.isBlank()) {
+			throw new IllegalStateException(field + " must not be blank");
+		}
+	}
+
 }

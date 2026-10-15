@@ -39,3 +39,5 @@ boot.ps1
 
 ### application.properties ###
 application.properties
+### Local configuration (use application.properties.example as template) ###
+src/main/resources/application.properties
