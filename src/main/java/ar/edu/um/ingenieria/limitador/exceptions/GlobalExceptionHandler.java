@@ -7,12 +7,33 @@ import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // Mismo mensaje para usuario inexistente y password incorrecta: no revelar
+    // qué usuarios existen en el sistema.
+    @ExceptionHandler({ BadCredentialsException.class, UsernameNotFoundException.class })
+    public ProblemDetail handleBadCredentials() {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        problem.setTitle("Unauthorized");
+        problem.setType(URI.create("https://limitador.edu.ar/problems/bad-credentials"));
+        return problem;
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ProblemDetail handleDisabled(DisabledException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "User is disabled");
+        problem.setTitle("Forbidden");
+        problem.setType(URI.create("https://limitador.edu.ar/problems/user-disabled"));
+        return problem;
+    }
 
     @ExceptionHandler(DuplicateUserException.class)
     public ProblemDetail handleDuplicateUser(DuplicateUserException ex) {
