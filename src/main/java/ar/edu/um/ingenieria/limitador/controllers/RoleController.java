@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,11 +30,13 @@ public class RoleController {
         this.roleMapper = roleMapper;
     }
 
+    @PreAuthorize ("hasRole('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<List<RoleDto>> findAll() {
         return ResponseEntity.ok(roleMapper.toDtoList(roleService.findAll()));
     }
 
+    @PreAuthorize ("hasRole('ROLE_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<RoleDto> findById(@PathVariable Long id) {
         return roleService.findById(id)
@@ -41,18 +44,21 @@ public class RoleController {
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
-
+    
+    @PreAuthorize ("hasRole('ROLE_SYSTEM')")
     @PostMapping
     public ResponseEntity<RoleDto> save(@RequestBody RoleDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(roleMapper.toDto(roleService.save(roleMapper.toEntity(dto))));
     }
 
+    @PreAuthorize ("hasRole('ROLE_SYSTEM')")
     @PutMapping("/{id}")
     public ResponseEntity<RoleDto> update(@PathVariable Long id, @RequestBody RoleDto dto) {
         return ResponseEntity.ok(roleMapper.toDto(roleService.update(id, roleMapper.toEntity(dto))));
     }
 
+    @PreAuthorize ("hasRole('ROLE_SYSTEM')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         roleService.deleteById(id);

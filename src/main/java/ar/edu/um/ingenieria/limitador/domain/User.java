@@ -60,6 +60,10 @@ public class User implements UserDetails {
 	@JoinColumn(name = "user_data_id")
 	private UserData userData;
 
+	// Constructor vacío requerido por JPA
+	public User() {
+	}
+
 	/**
 	 * Proyecta este usuario a una vista inmutable ({@link UserDetail}).
 	 *
