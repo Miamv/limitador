@@ -12,12 +12,15 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+
 import lombok.Data;
+import lombok.Getter;
 import lombok.ToString;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -47,8 +50,25 @@ public class User implements UserDetails {
 	@Column
 	private String password;
 
-	private Boolean active;
-	
+	private Boolean active = Boolean.FALSE;
+	public void setActive(Boolean active) {
+		this.active = Optional.ofNullable(active).orElse(Boolean.FALSE);
+	}
+
+	@JsonIgnore
+	@Column(name = "account_non_expired")
+	private Boolean accountNonExpired = Boolean.TRUE;
+
+
+	@JsonIgnore
+	@Column(name = "account_non_locked")
+	private Boolean accountNonLocked = Boolean.TRUE;
+
+
+	@JsonIgnore
+	@Column(name = "credentials_non_expired")
+	private Boolean credentialsNonExpired = Boolean.TRUE;
+
 @JsonIgnore
 	@ManyToMany
 	@JoinTable(name = "user_roles",
@@ -98,25 +118,25 @@ public class User implements UserDetails {
 	@JsonIgnore
 	@Override
 	public boolean isAccountNonExpired() {
-		return true;
+		return accountNonExpired;
 	}
 
 	@JsonIgnore
 	@Override
 	public boolean isAccountNonLocked() {
-		return true;
+		return accountNonLocked;
 	}
 
 	@JsonIgnore
 	@Override
 	public boolean isCredentialsNonExpired() {
-		return true;
+		return credentialsNonExpired;
 	}
 
 	@JsonIgnore
 	@Override
 	public boolean isEnabled() {
-		return Boolean.TRUE.equals(active);
+		return active;
 	}
 
 }

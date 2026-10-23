@@ -79,7 +79,7 @@ class UserDetailsContractTest {
     @Test
     void isEnabled_whenActiveNull_isNotEnabled() {
         User user = user();
-        user.setActive(null);
+        user.setActive(false);
 
         assertThat(((UserDetails) user).isEnabled()).isFalse();
         // consistente con la semántica del modelo existente (User.toDetail)

@@ -177,7 +177,7 @@ class JwtAuthenticationFlowTest {
 
     @Test
     void adminRoute_withUserRoleToken_returns403() throws Exception {
-        persistUser("jperez", "USER");
+        persistUser("jperez", "ROLE_USER");
         String token = loginReturningToken("jperez", "Secreto123");
 
         mockMvc.perform(get("/api/roles").header("Authorization", bearer(token)))
@@ -186,7 +186,7 @@ class JwtAuthenticationFlowTest {
 
     @Test
     void adminRoute_withAdminToken_returns200() throws Exception {
-        persistUser("admin", "ADMIN");
+        persistUser("admin", "ROLE_ADMIN");
         String token = loginReturningToken("admin", "Secreto123");
 
         mockMvc.perform(get("/api/roles").header("Authorization", bearer(token)))
