@@ -13,3 +13,8 @@ spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
 # JWT: definir la variable de entorno JWT_SECRET (minimo 32 bytes) fuera del repositorio.
 app.jwt.secret=${JWT_SECRET:}
 app.jwt.expiration-ms=3600000
+
+# MaxMind GeoLite2 databases (opcional, defaults a classpath:geolite/*.mmdb)
+geolite.city-database-path=classpath:geolite/GeoLite2-City.mmdb
+geolite.country-database-path=classpath:geolite/GeoLite2-Country.mmdb
+geolite.asn-database-path=classpath:geolite/GeoLite2-ASN.mmdb

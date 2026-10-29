@@ -1,6 +1,8 @@
 package ar.edu.um.ingenieria.limitador.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -9,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -23,6 +26,8 @@ import ar.edu.um.ingenieria.limitador.dto.AuthResponse;
 import ar.edu.um.ingenieria.limitador.dto.LoginRequest;
 import ar.edu.um.ingenieria.limitador.exceptions.GlobalExceptionHandler;
 import ar.edu.um.ingenieria.limitador.services.AuthenticationService;
+import ar.edu.um.ingenieria.limitador.services.LoginAuditService;
+import ar.edu.um.ingenieria.limitador.util.ClientIpResolver;
 
 @WebMvcTest(LoginController.class)
 @Import(GlobalExceptionHandler.class)
@@ -36,16 +41,28 @@ class LoginControllerTest {
     @MockitoBean
     private AuthenticationService authenticationService;
 
+    @MockitoBean
+    private LoginAuditService loginAuditService;
+
+    @MockitoBean
+    private ClientIpResolver clientIpResolver;
+
+    @BeforeEach
+    void setUp() {
+        when(clientIpResolver.extractClientIp(any())).thenReturn("190.112.50.10");
+    }
+
     private AuthResponse authResponse() {
         return new AuthResponse(TEST_JWT, 1L, "jperez", "jperez@um.edu.ar", true,
                 java.util.Set.of("USER"));
     }
 
     @Test
-    void login_withValidCredentials_returns200WithoutPassword() throws Exception {
+    void login_withValidCredentials_returns200WithoutPassword_andAuditsSuccess() throws Exception {
         when(authenticationService.login(any(LoginRequest.class))).thenReturn(authResponse());
 
         mockMvc.perform(post("/auth/login")
+                        .header("X-Forwarded-For", "190.112.50.10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -62,6 +79,8 @@ class LoginControllerTest {
                 .andExpect(jsonPath("$.active").value(true))
                 .andExpect(jsonPath("$.roles[0]").value("USER"))
                 .andExpect(jsonPath("$.password").doesNotExist());
+
+        verify(loginAuditService).recordLoginAttempt(eq("jperez"), eq("190.112.50.10"), eq(true), isNull());
     }
 
     @Test
@@ -86,7 +105,7 @@ class LoginControllerTest {
     }
 
     @Test
-    void login_withWrongPasswordOrUnknownUser_returns401ProblemDetail() throws Exception {
+    void login_withWrongPasswordOrUnknownUser_returns401ProblemDetail_andAuditsFailure() throws Exception {
         when(authenticationService.login(any(LoginRequest.class)))
                 .thenThrow(new BadCredentialsException("Bad credentials"));
 
@@ -104,10 +123,12 @@ class LoginControllerTest {
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.detail").value("Invalid credentials"))
                 .andExpect(jsonPath("$.password").doesNotExist());
+
+        verify(loginAuditService).recordLoginAttempt(eq("jperez"), eq("190.112.50.10"), eq(false), eq("Bad credentials"));
     }
 
     @Test
-    void login_withInactiveUser_returns403ProblemDetail() throws Exception {
+    void login_withInactiveUser_returns403ProblemDetail_andAuditsFailure() throws Exception {
         when(authenticationService.login(any(LoginRequest.class)))
                 .thenThrow(new DisabledException("User is disabled"));
 
@@ -124,6 +145,8 @@ class LoginControllerTest {
                 .andExpect(jsonPath("$.title").value("Forbidden"))
                 .andExpect(jsonPath("$.status").value(403))
                 .andExpect(jsonPath("$.detail").value("User is disabled"));
+
+        verify(loginAuditService).recordLoginAttempt(eq("inactivo"), eq("190.112.50.10"), eq(false), eq("User is disabled"));
     }
 
     @Test
@@ -138,5 +161,6 @@ class LoginControllerTest {
                 .andExpect(jsonPath("$.errors.password").value("password is required"));
 
         verify(authenticationService, never()).login(any());
+        verify(loginAuditService, never()).recordLoginAttempt(any(), any(), any(Boolean.class), any());
     }
 }
