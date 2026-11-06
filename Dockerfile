@@ -1,4 +1,4 @@
-FROM maven:4.0.0-eclipse-temurin-25-noble AS base
+FROM maven:3.9-eclipse-temurin-25-noble AS base
 WORKDIR /java/app/base
 
 RUN apt-get update 
@@ -9,7 +9,7 @@ RUN rm -rf /var/lib/apt/lists/*
 COPY pom.xml .
 RUN mvn dependency:resolve -B
 
-FROM maven:4.0.0-eclipse-temurin-25-noble AS builder
+FROM maven:3.9-eclipse-temurin-25-noble AS builder
 WORKDIR /java/app/builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

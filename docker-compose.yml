@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: limitador-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-limitador_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-limitador_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: auth:${APP_VERSION:-_v1.0.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: limitador-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-limitador_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${SPRING_DATASOURCE_DRIVER_CLASS_NAME:-org.postgresql.Driver}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      - SPRING_JPA_SHOW_SQL=${SPRING_JPA_SHOW_SQL:-false}
+      - JWT_SECRET=${JWT_SECRET:?Definir JWT_SECRET (minimo 32 bytes) en .env}
+      - APP_JWT_EXPIRATION_MS=${APP_JWT_EXPIRATION_MS:-3600000}
+      - GEOLITE_CITY_DATABASE_PATH=file:/geolite/GeoLite2-City.mmdb
+      - GEOLITE_COUNTRY_DATABASE_PATH=file:/geolite/GeoLite2-Country.mmdb
+      - GEOLITE_ASN_DATABASE_PATH=file:/geolite/GeoLite2-ASN.mmdb
+    volumes:
+      # Bases MaxMind GeoLite2 (.mmdb): no se versionan ni van dentro de la imagen.
+      - ${GEOLITE_DIR:-./src/main/resources/geolite}:/geolite:ro
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+volumes:
+  postgres_data:
