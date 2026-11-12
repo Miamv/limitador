@@ -34,8 +34,8 @@ public class JwtService {
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
 
-    public JwtService(@Value("${app.jwt.secret:}") String secret,
-            @Value("${app.jwt.expiration-ms:3600000}") long expirationMs) {
+    public JwtService(@Value("${app.jwt.secret:${JWT_SECRET:}}") String secret,
+            @Value("${app.jwt.expiration-ms:${JWT_EXPIRATION_MS:3600000}}") long expirationMs) {
         if (secret == null || secret.isBlank()) {
             throw new IllegalArgumentException(
                     "JWT secret is not configured; set the JWT_SECRET environment variable");

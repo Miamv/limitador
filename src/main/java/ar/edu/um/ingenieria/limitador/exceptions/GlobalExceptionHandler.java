@@ -35,6 +35,14 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(BlacklistedException.class)
+    public ProblemDetail handleBlacklisted(BlacklistedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Forbidden");
+        problem.setType(URI.create("https://limitador.edu.ar/problems/access-blocked"));
+        return problem;
+    }
+
     @ExceptionHandler(DuplicateUserException.class)
     public ProblemDetail handleDuplicateUser(DuplicateUserException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
@@ -63,6 +71,14 @@ public class GlobalExceptionHandler {
                 "The request conflicts with the current state of the resource");
         problem.setTitle("Conflict");
         problem.setType(URI.create("https://limitador.edu.ar/problems/data-integrity"));
+        return problem;
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Bad Request");
+        problem.setType(URI.create("https://limitador.edu.ar/problems/illegal-argument"));
         return problem;
     }
 }

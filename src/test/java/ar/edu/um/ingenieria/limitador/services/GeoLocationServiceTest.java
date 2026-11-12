@@ -1,6 +1,7 @@
 package ar.edu.um.ingenieria.limitador.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -150,6 +151,13 @@ class GeoLocationServiceTest {
     @DisplayName("Integración real con los archivos GeoLite2 en classpath (City, Country, ASN)")
     void resolve_realClasspathDatabases_resolvesPublicIp() {
         DefaultResourceLoader loader = new DefaultResourceLoader();
+        boolean cityExists = loader.getResource("classpath:geolite/GeoLite2-City.mmdb").exists();
+        boolean countryExists = loader.getResource("classpath:geolite/GeoLite2-Country.mmdb").exists();
+        boolean asnExists = loader.getResource("classpath:geolite/GeoLite2-ASN.mmdb").exists();
+
+        assumeTrue(cityExists && countryExists && asnExists,
+                "Se omiten las pruebas de integración con MaxMind real porque los binarios .mmdb no están presentes en classpath.");
+
         GeoLocationServiceImpl service = new GeoLocationServiceImpl(
                 loader,
                 "classpath:geolite/GeoLite2-City.mmdb",

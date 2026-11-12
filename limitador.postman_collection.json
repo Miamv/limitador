@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Limitador API - CRUD",
-    "description": "Colección completa para el proyecto Limitador, incluyendo CRUDs (/api) y Autenticación & Auditoría de Geolocalización con MaxMind GeoLite2 (/auth).\n\nBase URL por defecto: http://localhost:8080 (editar variable `baseUrl` si usas otro puerto/perfil).\n\nMódulos incluidos:\n- Auth & GeoLite Audit -> /auth (Register, Login con simulación de IPs y Auditoría)\n- Role -> /api/roles\n- User -> /api/users\n- UserData -> /api/users-data\n",
+    "description": "Colección completa para el proyecto Limitador, incluyendo CRUDs (/api), Autenticación, Registro & Auditoría de IPs con MaxMind GeoLite2 y Sistema de Blacklist (/auth).\n\nBase URL por defecto: http://localhost:8080 (editar variable `baseUrl` si usas otro puerto/perfil).\n\nMódulos incluidos:\n- Auth, GeoLite Audit & Blacklist -> /auth (Register, Login con auditoría de IPs, geolocalización y bloqueos CIDR/Usuario)\n- Role -> /api/roles\n- User -> /api/users\n- UserData -> /api/users-data\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -18,8 +18,8 @@
   ],
   "item": [
     {
-      "name": "Auth & GeoLite Audit - /auth",
-      "description": "Endpoints de Autenticación y Auditoría Geográfica con MaxMind GeoLite2.\n\nPermite probar el registro, login exitoso y login fallido simulando diferentes direcciones IP mediante cabeceras `X-Forwarded-For` o `X-Real-IP` para verificar la resolución de País, Ciudad y ASN.\n\nVerificación manual:\n- En la consola de la aplicación (logs INFO/WARN formateados).\n- En la base de datos: `SELECT * FROM login_audits ORDER BY timestamp DESC;`",
+      "name": "Auth, GeoLite Audit & Blacklist - /auth",
+      "description": "Endpoints de Autenticación, Auditoría Geográfica con MaxMind GeoLite2 y Sistema de Blacklist.\n\nPermite probar:\n1. Registro y Login exitoso/fallido simulando IPs mediante `X-Forwarded-For` o `X-Real-IP`.\n2. Bloqueo de acceso por IP individual (/32) o subredes CIDR (IPv4/IPv6, ej: /24, /48).\n3. Bloqueo de acceso por Usuario (independiente de la IP).\n4. Reglas combinadas (si cumple cualquiera, se deniega acceso) y saneamiento de cabeceras de proxy.\n\nComandos SQL para preparar pruebas de Blacklist en PostgreSQL:\n```sql\n-- 1. Bloquear IP individual\nINSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at)\nVALUES ('198.51.100.10', 'IP maliciosa detectada en escaneo', true, NOW());\n\n-- 2. Bloquear subred CIDR IPv4 (/24)\nINSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at)\nVALUES ('203.0.113.0/24', 'Rango no autorizado', true, NOW());\n\n-- 3. Bloquear subred CIDR IPv6 (/48)\nINSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at)\nVALUES ('2001:db8:abcd::/48', 'Botnet IPv6', true, NOW());\n\n-- 4. Bloquear usuario específico\nINSERT INTO blacklist_rules (username, reason, active, created_at)\nVALUES ('atacante', 'Cuenta suspendida por seguridad', true, NOW());\n\n-- 5. Consultar auditoría con estado y flag user_exists\nSELECT id, username, ip_address, status, user_exists, failure_reason, timestamp, country, city, asn\nFROM login_audits ORDER BY timestamp DESC;\n```",
       "item": [
         {
           "name": "POST Register User",
@@ -358,6 +358,309 @@
               ]
             },
             "description": "Prueba de auditoría con usuario no existente. Debe devolver 401 Unauthorized y persistir auditoría con success = false."
+          }
+        },
+        {
+          "name": "POST Login - Bloqueado por IP Individual (/32)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Respuesta ProblemDetail indica bloqueo de acceso\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(403);",
+                  "    pm.expect(json.title).to.eql(\"Forbidden\");",
+                  "    pm.expect(json.detail).to.be.a('string');",
+                  "});",
+                  "pm.test(\"NUNCA se emite token JWT ante un intento bloqueado\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Forwarded-For",
+                "value": "198.51.100.10",
+                "description": "IP bloqueada por regla individual en blacklist_rules"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"santi\",\n  \"password\": \"Secreto123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Prueba de bloqueo por IP exacta (/32). Requiere regla en BD: INSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at) VALUES ('198.51.100.10', 'IP maliciosa detectada en escaneo', true, NOW()); Debe devolver 403 Forbidden y registrar status = 'BLOCKED' en login_audits sin emitir JWT."
+          }
+        },
+        {
+          "name": "POST Login - Bloqueado por Rango CIDR IPv4 (/24)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Respuesta ProblemDetail indica bloqueo por subred CIDR\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(403);",
+                  "    pm.expect(json.title).to.eql(\"Forbidden\");",
+                  "});",
+                  "pm.test(\"NUNCA se emite token JWT\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Forwarded-For",
+                "value": "203.0.113.45",
+                "description": "IP perteneciente a la subred bloqueada 203.0.113.0/24"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"santi\",\n  \"password\": \"Secreto123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Prueba de bloqueo por subred CIDR IPv4 (/24). Requiere regla en BD: INSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at) VALUES ('203.0.113.0/24', 'Rango no autorizado', true, NOW()); Debe denegar el acceso a cualquier IP del rango."
+          }
+        },
+        {
+          "name": "POST Login - Bloqueado por Rango CIDR IPv6 (/48)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"NUNCA se emite token JWT ante bloqueo IPv6\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Forwarded-For",
+                "value": "2001:db8:abcd:0012::1",
+                "description": "IP IPv6 perteneciente al prefijo 2001:db8:abcd::/48"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"santi\",\n  \"password\": \"Secreto123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Prueba de bloqueo por subred CIDR IPv6. Requiere regla: INSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at) VALUES ('2001:db8:abcd::/48', 'Botnet IPv6', true, NOW());"
+          }
+        },
+        {
+          "name": "POST Login - Bloqueado por Usuario (Bloqueo de Cuenta)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"El detalle refleja el motivo de suspensión del usuario\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.detail).to.be.a('string');",
+                  "});",
+                  "pm.test(\"NUNCA se emite token JWT para usuario bloqueado\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"atacante\",\n  \"password\": \"CualquierPassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Prueba de bloqueo por usuario (independiente de la IP de origen). Requiere regla en BD: INSERT INTO blacklist_rules (username, reason, active, created_at) VALUES ('atacante', 'Cuenta suspendida por seguridad', true, NOW());"
+          }
+        },
+        {
+          "name": "POST Login - Bloqueado por Regla Combinada (IP o Usuario)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"NUNCA se emite token JWT ante regla combinada\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Forwarded-For",
+                "value": "198.51.100.200"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"badactor\",\n  \"password\": \"Secreto123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Prueba de regla combinada (ambos criterios funcionan independiente o conjuntamente: si cumple cualquiera, se deniega acceso). Requiere regla: INSERT INTO blacklist_rules (ip_or_cidr, username, reason, active, created_at) VALUES ('198.51.100.200', 'badactor', 'Ataque coordinado', true, NOW());"
+          }
+        },
+        {
+          "name": "POST Login - Cabecera Proxy con IP Inválida (Fallback Seguro)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"La cabecera maliciosa fue descartada y se emite token legítimo\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Forwarded-For",
+                "value": "<script>alert('hack')</script>, 127.0.0.1",
+                "description": "Cabecera con contenido malicioso que ClientIpResolver debe sanear descartando la IP inválida y usando el fallback seguro"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"santi\",\n  \"password\": \"Secreto123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Verifica que el resolver de IPs descarte entradas malformadas en X-Forwarded-For y continúe de forma segura sin provocar errores internos ni permitir inyecciones."
           }
         }
       ]
@@ -791,6 +1094,168 @@
               ]
             },
             "description": "UserDataController.java:53 `deleteById(id)` -> 204 No Content"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blacklist Management (Admin) - /api/blacklist",
+      "description": "Gestión administrativa de reglas de Blacklist (BlacklistController: `/api/blacklist`).\nRequiere rol ADMIN (token JWT de administrador).\n\nPermite:\n1. Dar de alta reglas de baneo por IP individual (/32) o rango CIDR (IPv4/IPv6).\n2. Dar de alta reglas de baneo por Usuario.\n3. Listar todas las reglas activas o configuradas.\n4. Obtener regla por ID.\n5. Modificar estado, expiración o motivo de una regla.\n6. Eliminar una regla por ID.",
+      "item": [
+        {
+          "name": "GET All Blacklist Rules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/blacklist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "blacklist"
+              ]
+            },
+            "description": "Lista todas las reglas de blacklist registradas en el sistema. Requiere rol ADMIN."
+          }
+        },
+        {
+          "name": "GET Blacklist Rule by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/blacklist/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "blacklist",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Obtiene el detalle de una regla de blacklist por su ID. Requiere rol ADMIN."
+          }
+        },
+        {
+          "name": "POST Create Blacklist Rule - Por IP o CIDR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ipOrCidr\": \"198.51.100.10\",\n  \"reason\": \"IP bloqueada por intentos sospechosos\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/blacklist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "blacklist"
+              ]
+            },
+            "description": "Crea una regla de bloqueo por IP individual (/32) o subred CIDR (ej: 203.0.113.0/24 o 2001:db8:abcd::/48). Requiere rol ADMIN."
+          }
+        },
+        {
+          "name": "POST Create Blacklist Rule - Por Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"usuario_bloqueado\",\n  \"reason\": \"Cuenta suspendida preventivamente\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/blacklist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "blacklist"
+              ]
+            },
+            "description": "Crea una regla de bloqueo por nombre de usuario (independiente de la IP de origen). Requiere rol ADMIN."
+          }
+        },
+        {
+          "name": "PUT Update Blacklist Rule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ipOrCidr\": \"198.51.100.10\",\n  \"reason\": \"Bloqueo actualizado\",\n  \"active\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/blacklist/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "blacklist",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Actualiza los parámetros, motivo o estado activo/inactivo de una regla existente. Requiere rol ADMIN."
+          }
+        },
+        {
+          "name": "DELETE Blacklist Rule",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/blacklist/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "blacklist",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Elimina definitivamente una regla de blacklist por su ID. Requiere rol ADMIN."
           }
         }
       ]

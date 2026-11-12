@@ -30,14 +30,25 @@ public class ClientIpResolver {
         for (String header : IP_HEADER_CANDIDATES) {
             String ipList = request.getHeader(header);
             if (ipList != null && !ipList.isBlank() && !"unknown".equalsIgnoreCase(ipList)) {
-                return ipList.split(",")[0].trim();
+                String candidate = ipList.split(",")[0].trim();
+                if (IpCidrValidator.isValidIp(candidate)) {
+                    return normalizeLoopback(candidate);
+                }
             }
         }
 
         String remoteAddr = request.getRemoteAddr();
-        if ("0:0:0:0:0:0:0:1".equals(remoteAddr) || "::1".equals(remoteAddr)) {
+        if (remoteAddr != null && !remoteAddr.isBlank() && IpCidrValidator.isValidIp(remoteAddr)) {
+            return normalizeLoopback(remoteAddr);
+        }
+
+        return "0.0.0.0";
+    }
+
+    private String normalizeLoopback(String ip) {
+        if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
             return "127.0.0.1";
         }
-        return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr : "0.0.0.0";
+        return ip;
     }
 }

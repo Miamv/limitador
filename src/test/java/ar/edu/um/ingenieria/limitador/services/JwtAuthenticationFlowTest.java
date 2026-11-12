@@ -193,6 +193,30 @@ class JwtAuthenticationFlowTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void blacklistRoute_withoutToken_returns401() throws Exception {
+        mockMvc.perform(get("/api/blacklist"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void blacklistRoute_withUserRoleToken_returns403() throws Exception {
+        persistUser("regularUser", "ROLE_USER");
+        String token = loginReturningToken("regularUser", "Secreto123");
+
+        mockMvc.perform(get("/api/blacklist").header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void blacklistRoute_withAdminToken_returns200() throws Exception {
+        persistUser("blacklistAdmin", "ROLE_ADMIN");
+        String token = loginReturningToken("blacklistAdmin", "Secreto123");
+
+        mockMvc.perform(get("/api/blacklist").header("Authorization", bearer(token)))
+                .andExpect(status().isOk());
+    }
+
     // ---------- Tokens firmados a mano (solo para casos negativos) ----------
 
     private String expiredTokenSignedWith(String secret) {

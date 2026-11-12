@@ -33,6 +33,7 @@ public class GeoLocationServiceImpl implements GeoLocationService {
     private final String cityDatabasePath;
     private final String countryDatabasePath;
     private final String asnDatabasePath;
+    private final int cacheSize;
 
     private DatabaseReader cityReader;
     private DatabaseReader countryReader;
@@ -41,13 +42,23 @@ public class GeoLocationServiceImpl implements GeoLocationService {
     @Autowired
     public GeoLocationServiceImpl(
             ResourceLoader resourceLoader,
-            @Value("${geolite.city-database-path:classpath:geolite/GeoLite2-City.mmdb}") String cityDatabasePath,
-            @Value("${geolite.country-database-path:classpath:geolite/GeoLite2-Country.mmdb}") String countryDatabasePath,
-            @Value("${geolite.asn-database-path:classpath:geolite/GeoLite2-ASN.mmdb}") String asnDatabasePath) {
+            @Value("${geolite.city-database-path:${GEOIP_DATABASE_CITY_PATH:classpath:geolite/GeoLite2-City.mmdb}}") String cityDatabasePath,
+            @Value("${geolite.country-database-path:${GEOIP_DATABASE_COUNTRY_PATH:classpath:geolite/GeoLite2-Country.mmdb}}") String countryDatabasePath,
+            @Value("${geolite.asn-database-path:${GEOIP_DATABASE_ASN_PATH:classpath:geolite/GeoLite2-ASN.mmdb}}") String asnDatabasePath,
+            @Value("${geolite.cache-size:${GEOIP_DATABASE_CACHE_SIZE:4096}}") int cacheSize) {
         this.resourceLoader = resourceLoader;
         this.cityDatabasePath = cityDatabasePath;
         this.countryDatabasePath = countryDatabasePath;
         this.asnDatabasePath = asnDatabasePath;
+        this.cacheSize = cacheSize > 0 ? cacheSize : 4096;
+    }
+
+    public GeoLocationServiceImpl(
+            ResourceLoader resourceLoader,
+            String cityDatabasePath,
+            String countryDatabasePath,
+            String asnDatabasePath) {
+        this(resourceLoader, cityDatabasePath, countryDatabasePath, asnDatabasePath, 4096);
     }
 
     // Constructor para pruebas unitarias o inyección directa de los readers
@@ -59,6 +70,7 @@ public class GeoLocationServiceImpl implements GeoLocationService {
         this.cityDatabasePath = null;
         this.countryDatabasePath = null;
         this.asnDatabasePath = null;
+        this.cacheSize = 4096;
         this.cityReader = cityReader;
         this.countryReader = countryReader;
         this.asnReader = asnReader;
@@ -83,7 +95,7 @@ public class GeoLocationServiceImpl implements GeoLocationService {
             if (resource.exists()) {
                 try (InputStream is = resource.getInputStream()) {
                     DatabaseReader reader = new DatabaseReader.Builder(is)
-                            .withCache(new CHMCache())
+                            .withCache(new CHMCache(cacheSize))
                             .build();
                     log.info("Base de datos {} cargada exitosamente desde: {}", dbName, path);
                     return reader;
