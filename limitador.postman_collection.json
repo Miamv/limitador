@@ -16,9 +16,22 @@
       "type": "string"
     }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwtToken}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
     {
       "name": "Auth, GeoLite Audit & Blacklist - /auth",
+      "auth": {
+        "type": "noauth"
+      },
       "description": "Endpoints de Autenticación, Auditoría Geográfica con MaxMind GeoLite2 y Sistema de Blacklist.\n\nPermite probar:\n1. Registro y Login exitoso/fallido simulando IPs mediante `X-Forwarded-For` o `X-Real-IP`.\n2. Bloqueo de acceso por IP individual (/32) o subredes CIDR (IPv4/IPv6, ej: /24, /48).\n3. Bloqueo de acceso por Usuario (independiente de la IP).\n4. Reglas combinadas (si cumple cualquiera, se deniega acceso) y saneamiento de cabeceras de proxy.\n\nComandos SQL para preparar pruebas de Blacklist en PostgreSQL:\n```sql\n-- 1. Bloquear IP individual\nINSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at)\nVALUES ('198.51.100.10', 'IP maliciosa detectada en escaneo', true, NOW());\n\n-- 2. Bloquear subred CIDR IPv4 (/24)\nINSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at)\nVALUES ('203.0.113.0/24', 'Rango no autorizado', true, NOW());\n\n-- 3. Bloquear subred CIDR IPv6 (/48)\nINSERT INTO blacklist_rules (ip_or_cidr, reason, active, created_at)\nVALUES ('2001:db8:abcd::/48', 'Botnet IPv6', true, NOW());\n\n-- 4. Bloquear usuario específico\nINSERT INTO blacklist_rules (username, reason, active, created_at)\nVALUES ('atacante', 'Cuenta suspendida por seguridad', true, NOW());\n\n-- 5. Consultar auditoría con estado y flag user_exists\nSELECT id, username, ip_address, status, user_exists, failure_reason, timestamp, country, city, asn\nFROM login_audits ORDER BY timestamp DESC;\n```",
       "item": [
         {
